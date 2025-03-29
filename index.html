@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자바 체스 엔진 (5수 탐색)</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+        }
+        
+        .board-container {
+            margin-bottom: 20px;
+        }
+        
+        .chessboard {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            border: 2px solid #333;
+        }
+        
+        .square {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .white {
+            background-color: #f0d9b5;
+        }
+        
+        .black {
+            background-color: #b58863;
+        }
+        
+        .piece {
+            font-size: 40px;
+            z-index: 10;
+        }
+        
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.4);
+        }
+        
+        .selected {
+            background-color: rgba(0, 255, 0, 0.3);
+        }
+        
+        .possible-move::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+            z-index: 5;
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .status {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .move-history {
+            margin-top: 20px;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        
+        .move-history h3 {
+            margin-top: 0;
+        }
+        
+        .move-list {
+            display: grid;
+            grid-template-columns: auto auto auto;
+            gap: 10px;
+        }
+        
+        .move-number {
+            font-weight: bold;
+        }
+        
+        .promotion-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+        
+        .promotion-pieces {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+        
+        .promotion-piece {
+            font-size: 40px;
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        .promotion-piece:hover {
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 90;
+        }
+        
+        .rank-labels {
+            display: grid;
+            grid-template-rows: repeat(8, 60px);
+            margin-right: 5px;
+        }
+        
+        .file-labels {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            margin-top: 5px;
+        }
+        
+        .label {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .board-with-labels {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .row-with-labels {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>자바 체스 엔진 (5수 탐색)</h1>
+    
+    <div class="game-container">
+        <div class="board-container">
+            <div class="board-with-labels">
+                <div class="file-labels">
+                    <div class="label">a</div>
+                    <div class="label">b</div>
+                    <div class="label">c</div>
+                    <div class="label">d</div>
+                    <div class="label">e</div>
+                    <div class="label">f</div>
+                    <div class="label">g</div>
+                    <div class="label">h</div>
+                </div>
+                <div class="row-with-labels">
+                    <div class="rank-labels">
+                        <div class="label">8</div>
+                        <div class="label">7</div>
+                        <div class="label">6</div>
+                        <div class="label">5</div>
+                        <div class="label">4</div>
+                        <div class="label">3</div>
+                        <div class="label">2</div>
+                        <div class="label">1</div>
+                    </div>
+                    <div class="chessboard" id="chessboard">
+                        <!-- 자바스크립트로 채워질 체스판 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status" id="status">현재 상태: 흰색 차례</div>
+        
+        <div class="controls">
+            <button id="new-game">새 게임</button>
+            <button id="ai-move">AI 추천 수 두기</button>
+            <button id="undo-move">무르기</button>
+        </div>
+        
+        <div class="move-history">
+            <h3>기보</h3>
+            <div class="move-list" id="move-list">
+                <!-- 자바스크립트로 채워질 기보 -->
+            </div>
+        </div>
+    </div>
+    
+    <div class="promotion-modal" id="promotion-modal">
+        <h3>폰 승진</h3>
+        <p>어떤 기물로 승진할지 선택하세요:</p>
+        <div class="promotion-pieces">
+            <div class="promotion-piece" data-piece="q">♛</div>
+            <div class="promotion-piece" data-piece="r">♜</div>
+            <div class="promotion-piece" data-piece="b">♝</div>
+            <div class="promotion-piece" data-piece="n">♞</div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="modal-overlay"></div>
+    
+<!-- 외부 라이브러리 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<!-- stockfish.js는 WebWorker에서 로드되므로 여기서 스크립트 태그로 로드하지 않습니다 -->
+
+<!-- 체스 엔진 파일들 (순서 중요) -->
+<script src="chess-stockfish.js"></script>
+<script src="chess-ui.js"></script>
+</body>
+</html>

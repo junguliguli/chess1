@@ -14,38 +14,37 @@ class StockfishEngine {
     
     // 엔진 초기화
     initEngine() {
-    // 로컬에 저장된 stockfish.js 파일 사용
-    this.engine = new Worker(new URL('stockfish.js', import.meta.url));
-    
-    // 엔진 메시지 처리
-    this.engine.onmessage = (event) => {
-        const message = event.data;
+        // Stockfish 웹워커 생성 
+        this.engine = new Worker('stockfish.js');
         
-        // 준비 완료 메시지
-        if (message === 'readyok') {
-            this.isReady = true;
-            if (this.onReadyCallback) {
-                this.onReadyCallback();
+        // 엔진 메시지 처리
+        this.engine.onmessage = (event) => {
+            const message = event.data;
+            
+            // 준비 완료 메시지
+            if (message === 'readyok') {
+                this.isReady = true;
+                if (this.onReadyCallback) {
+                    this.onReadyCallback();
+                }
             }
-        }
-        
-        // 최선의 수 찾기 메시지
-        if (message.startsWith('bestmove')) {
-            const moveStr = message.split(' ')[1];
-            if (this.onMoveCallback && moveStr) {
-                this.onMoveCallback(moveStr);
+            
+            // 최선의 수 찾기 메시지
+            if (message.startsWith('bestmove')) {
+                const moveStr = message.split(' ')[1];
+                if (this.onMoveCallback && moveStr) {
+                    this.onMoveCallback(moveStr);
+                }
             }
-        }
+            
+            // 디버깅용 로그
+            console.log('Engine:', message);
+        };
         
-        // 디버깅용 로그
-        console.log('Engine:', message);
-    };
-    
-    // 엔진 설정
-    this.sendCommand('uci');
-    this.sendCommand('isready');
-}
-    
+        // 엔진 설정
+        this.sendCommand('uci');
+        this.sendCommand('isready');
+    }
     // 엔진에 명령 전송
     sendCommand(cmd) {
         if (this.engine) {

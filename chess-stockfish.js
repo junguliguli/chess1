@@ -15,7 +15,7 @@ class StockfishEngine {
     // 엔진 초기화
     initEngine() {
     // 로컬에 저장된 stockfish.js 파일 사용
-    this.engine = new Worker('./stockfish.js');
+    this.engine = new Worker(new URL('stockfish.js', import.meta.url));
     
     // 엔진 메시지 처리
     this.engine.onmessage = (event) => {
